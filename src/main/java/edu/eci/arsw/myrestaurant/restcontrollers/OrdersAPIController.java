@@ -16,25 +16,47 @@
  */
 package edu.eci.arsw.myrestaurant.restcontrollers;
 
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import edu.eci.arsw.myrestaurant.model.Order;
 import edu.eci.arsw.myrestaurant.model.ProductType;
+import edu.eci.arsw.myrestaurant.model.ResponseOrder;
 import edu.eci.arsw.myrestaurant.model.RestaurantProduct;
+import edu.eci.arsw.myrestaurant.services.OrderServicesException;
+import edu.eci.arsw.myrestaurant.services.RestaurantOrderServices;
 import edu.eci.arsw.myrestaurant.services.RestaurantOrderServicesStub;
-import java.util.Hashtable;
-import java.util.Map;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import netscape.javascript.JSObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  *
  * @author hcadavid
  */
+@RestController
+@RequestMapping("/api")
 public class OrdersAPIController {
+    private final RestaurantOrderServices restaurantOrderServices;
 
+    public OrdersAPIController(RestaurantOrderServices restaurantOrderServices) {
+        this.restaurantOrderServices = restaurantOrderServices;
+    }
+
+    @GetMapping("/orders")
+    public ResponseEntity<List<ResponseOrder>> getOrders() throws OrderServicesException {
+        List<ResponseOrder> response = new ArrayList<>();
+        Set<Integer> keys = restaurantOrderServices.getTablesWithOrders();
+        for( Integer k: keys) {
+            Order order =  restaurantOrderServices.getTableOrder(k);
+            Set<String> dishes = order.getOrderedDishes();
+            int bill = restaurantOrderServices.calculateTableBill(order.getTableNumber());
+            response.add(new ResponseOrder(k, dishes, bill ));
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
     
 }
